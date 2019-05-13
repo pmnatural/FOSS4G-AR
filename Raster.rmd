@@ -1,166 +1,175 @@
-# Análisis espacial ráster con R
+---
+title: "FOSS4G-AR Muestra de Analisis Espacial con R"
+author: "Priscilla Minotti"
+date: "11 de abril de 2019"
+output: html_document
+---
 
-##### Priscilla Minotti
-
-##### priscilla.minotti@gmail.com
-
-## ¿Por qué uso R?
-
- - Flujo de trabajo simple y programático para trabajar con datos ráster multitemporales
-
-#### 4 ejemplos
-
-- Descarga de datos y preprocesamiento de productos MODIS
-- Estadísticas temporales per pixel
-- Muchísimas opciones de análisis mediante algoritmos de aprendizaje automático
-- Visualización con Leaflet
-
-## Descarga de datos y preprocesamiento de productos MODIS
-
-#### Paquete MODIStsp L. Busetto, L. Ranghetti(2016)
-https://github.com/ropensci/MODIStsp
-
-- Requiere GDAL (instalado) y GTK+ (mapedit)
-- Selección x producto, sensor, variable periodo,región, índices espectrales, indicadores de calidad
-- Descarga y preprocesaHDFs, genera rasters físicos (tif) o virtuales (serie de tiempo)
-
-```
-#interactivo
-MODIStsp()
-```
-```
-#no interactivo
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### descarga.json
+#Armado del stack con la serie de tiempo y verificamos la extructura de la serie de tiempo
+```{r}
+library(raster)
 
-```
+EVIstack<-stack(list.files(path="VI_Monthly_005dg_v6/EVI", full.names = TRUE))
+
 (EVIstack)
-class : RasterStack
-dimensions : 3600, 7200, 25920000, 188 (nrow, ncol, ncell, nlayers)
-resolution : 0.05, 0.05 (x, y)
-extent : -180, 180, -90, 90 (xmin, xmax, ymin, ymax)
-coord. ref. : +proj=longlat+ellps=clrk66 +no_defs
-names : MYD13C2_EVI_2002_182, MYD13C2_EVI_2002_213, MYD13C2_EVI_2002_244, MYD13C2_EVI_2002_274,
-MYD13C2_EVI_2002_305, MYD13C2_EVI_2002_335, MYD13C2_EVI_2003_001, MYD13C2_EVI_2003_032, MYD13C2_EVI_2003_060,
-MYD13C2_EVI_2003_091, MYD13C2_EVI_2003_121, MYD13C2_EVI_2003_152, MYD13C2_EVI_2003_182, MYD13C2_EVI_2003_213,
-MYD13C2_EVI_2003_244, ...
-min values : -32768, -32768, -32768, -32768, -32768, - 3 2768, -32768, -32768,
-32768, -32768, -32768, -32768, -32768, -32768, -32768, ...
-maxvalues : 32767, 32767, 32767, 32767, 32767, 3 2767, 32767, 32767,
-32767, 32767, 32767, 32767, 32767, 32767, 32767, ...
-
-###Lectura y preparación del stack temporal 
-
-####Paquete raster Robert J. Hijmans(2019)
-
 ```
+
+Hacemos algunas visualizaciones para ver distintas capas
+
+```{r}
 plot(EVIstack[[10:12]])
 ```
-```
+
+```{r}
 plot(EVIstack[[c(1,4,8,12)]])
 ```
 
-```
+```{r}
 plotRGB(EVIstack,1,90,180, stretch='hist')
-
 ```
 
-```
-pampa<-crop(EVIstack, drawExtent())
 
 
-``````
+```{r}
 plot(EVIstack[[10]])
-
 ```
 
-```
+Si quisiera recortar mediante un rectangulo definido en el mapa, la funcion drawExtent permite hacerlo a partir de hacer clic en las dos esquinas opuestas del rectangulo pero tambien puedo usar otro raster o un poligono con la extension deseada,
+
+```{r}
+#No correr
+#pampa<-drawExtent()
+#zoom(EVIstack,pampa)
+#EVIpampa <-crop(EVIstack,pampa)
+
+EVIpampa<-stack(EVIstack.tif)
 (EVIpampa)
-**class** : RasterBrick
-**dimensions** : 203, 204, 41412, 188 (nrow, ncol, ncell, nlayers)
-**resolution** : 0.05, 0.05 (x, y)
-**extent** : -64.9, -54.7, -39.9, -29.75 (xmin, xmax, ymin, ymax)
-**coord. ref.** : +proj=longlat+ellps=clrk66 +no_defs
-**data source** :
-C:/Users/Admin/AppData/Local/Temp/RtmpMTLbjX/raster/r_tmp_2019-
-04 - 10_234525_9800_86346.grd
-**names** : MYD13C2_EVI_2002_182, MYD13C2_EVI_2002_213,
-MYD13C2_EVI_2002_244, MYD13C2_EVI_2002_274,
-MYD13C2_EVI_2002_305, MYD13C2_EVI_2002_335,
-MYD13C2_EVI_2003_001, MYD13C2_EVI_2003_032,
-MYD13C2_EVI_2003_060, MYD13C2_EVI_2003_091,
-MYD13C2_EVI_2003_121, MYD13C2_EVI_2003_152,
-MYD13C2_EVI_2003_182, MYD13C2_EVI_2003_213,
-MYD13C2_EVI_2003_244, ...
-**min values** : -1810, -1367, -1466, -1419,
-1646, -1421, -1443, -1084, -1646,
-1220, -1076, -996, -1948, -1676,
-1419, ...
-**maxvalues** : 5666, 5334, 5573, 5863,
-6107, 7818, 7865, 7850, 7121,
-5737, 5358, 5350, 5777, 4708,
-4909, ...
+```
+Puedo ver como quedo en un plot
+```{r}
+plot(EVIpampa[[10]], main=names(EVIpampa[[10]]))
 ```
 
+Si quiero puedo exportarlo a otro formato para levantarlo en otro software
 
+```{r}
+writeRaster(EVIpampa, filename="EVIpampa.tif", format="GTiff", overwrite=TRUE)
 ```
+
+Puedo calcular facilmente estadistica de la serie temporal
+```{r}
 mediaEVI<-mean(EVIpampa[[1:180]])
+plot(mediaEVI)
 ```
-## Estadísticas temporales per pixel
 
-##### Paquete rasterVis Oscar PerpinanLamigueiro
+El paquete remote fue especificamente diseñado para trabajar con series de tiempo de imagenes y trae funciones muy utiles como calculos de anomalias con respecto a las medias estacionales o mensuales para cada pixel. Las imagenes usadas en el ejemplos son mensuales, entonces es periodo para desestacionalizarlas es 12. Esta funcion requiere que el numero de capas de la serie sea multiplo del periodo a usar.
 
-```
-library(rasterVis)
-HumCol <-rasterTheme(region=rev(brewer.pal(10,"Blues")))
-pltEVImedia<-levelplot(mediaEVI, margin=F,
-par.settings=HumCol,main="EVI medio 2002-2017")
-pltEVImedia
-```
-```
+```{r}
 library(remote)
+
 anomEVI<-deseason(EVIpampa[[1:180]], 12)
+```
+Tambien se pueden calcular estadisticas o seleccionar determinados valores a partir de las series temporales, anomalizadas o no.
+
+```{r}
+anomEVImed<-mean(anomEVI)
 anomneg<-sum(anomEVI<0)
 ```
-###Estadísticas temporales per pixel
 
-##### Paquete remote Tim Appelhans, FlorianDetsch, Thomas Nauss
+Como las opciones de plot de raster no son muy buenas, se usan otros paquetes que brindan mejores opciones y tambien se usan paques para ampliar las paletas de colores
 
-HumCol <-rasterTheme(region=rev(brewer.pal(10,"Blues")))
+```{r}
+library(RColorBrewer)
+library(rasterVis)
+```
+Con lstos paquetes se pueden ensayar otro tipo de visualizaciones
 
-titu<-paste("anomalia",names(EVIpampa[[10]]), sep=" ")
-Plt-EVIanom<-levelplot(anomEVI[[10]], margin=F, par.settings=HumCol,main=titu)
-Plt-EVIanom
-
-Plt-anomneg<-levelplot(anomneg, margin=F, par.settings=HumCol,main="Suma
-Anomaliasnegativas EVI 2002-2017")
-Plt-anomneg
+```{r}
+HumCol <- rasterTheme(region=rev(brewer.pal(10,"Blues")))
+pltEVImedia <- levelplot(mediaEVI, margin=F, par.settings=HumCol,main="EVI medio 2002-2017")
+pltEVImedia
 ```
 
-### Muchísimas opciones de análisis mediante algoritmos de aprendizaje automático
+```{r}
+pltanomneg <- levelplot(anomneg, margin=F, par.settings=HumCol,main="Suma Anomalias negativas EVI 2002-2017")
+pltanomneg
+```
 
-La mayoría requiere transformar el stack multitemporal a otra estructura de datos
+```{r}
+titu<-paste("anomalia",names(EVIpampa[[10]]), sep=" ")
+pltEVIanom <- levelplot(anomEVI[[10]], margin=F, par.settings=HumCol,main=titu)
+pltEVIanom
+```
 
-### Paquete cluster M Maechler
+#Probando algo de mineroia de datos y machine learning
 
+Para aprovechar la mayoria de los algoritmos disponibles es necesario converstir el stack a una matriz, dataframe, tiblle o data.table segun el paquete que vayamos a usar. En los ejemplos siguientes, es necesario tener los datos como matriz y tambien asegurar que no haya datos vacios o NAs
 
-### Paquete kohonen R Wehrens
-
-
-### Paquete tmap M Tennekes https://github.com/mtennekes/tmap
-
-
-### ¡Visualización con Leaflet!
-
-
-# Muchas gracias
-
-
-Priscilla Minotti
-priscilla.minotti@gmail.com
-pminotti@unsam.edu.ar
-Tweeter @pmnatural
-https://t.me/rspatial_es
+```{r}
+EVImat <- as.matrix(EVIpampa)
+i <- which(!is.na(EVImat))
+EVI.mat<- na.omit(EVImat)
+dim(EVI.mat)
+```
 
 
+##clasificar con Kmeans mediante el paquete cluster
+
+```{r}
+library(cluster)
+
+Ek <- kmeans(EVI.mat, 20, iter.max = 100, nstart = 10)
+kmeans_raster <- raster(EVIpampa)
+kmeans_raster[i] <- Ek$cluster
+
+plot(kmeans_raster)
+```
+
+Si quiero lo guardo como tif para ver en otro lado
+
+```{r}
+writeRaster(kmeans_raster, filename="kmeans_raster.tif", format="GTiff", overwrite=TRUE)
+```
+
+
+## clasificar con SOM mediante el paquete Kohonen
+
+Para hacerlo comparable con el ejemplo anterior la red neuronal constara de 20 neuronas en arreglo hexagonal
+```{r}
+library(kohonen)
+
+set.seed(5)
+n<-nrow(EVIpampa)
+EVIsom<-som(EVI.mat,somgrid(4,5,"hexagonal"))
+```
+Los siguientes graficos informa sobre como se va estabilizando la red
+```{r}
+plot(EVIsom, type="changes")
+```
+
+Y como es el patron temporal de cada una de las neuronas
+
+```{r}
+plot(EVIsom, type="codes", codeRendering="lines")
+
+```
+
+para ver la distribucion espacial de los pixeles segun la neurona que los nucleo es necesario aplicar el modelo encontradao a toda la matriz de datos, prediciendo para cada pixel su neurona y luego necesario reconvertir la matriz a formato raster. Para verificar esto es util plotear la prediccion espacilmente
+```{r}
+train<-EVI.mat[1:n]
+EVIsom_pred<-predict(EVIsom, EVI.mat, trainY= train)
+
+som_raster <- raster(EVIpampa)
+som_raster[i] <- EVIsom_pred$unit.classif
+plot(som_raster)
+```
+Como siempre es util guardar los resultados en un formato que pueda ser compartido, si este es el ultimo paso del analisis
+
+```{r}
+
+writeRaster(som_raster, filename="som_raster.tif", format="GTiff", overwrite=TRUE)
+```
