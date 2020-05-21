@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#Armado del stack con la serie de tiempo y verificamos la extructura de la serie de tiempo
+# Armado del stack con la serie de tiempo y verificamos la extructura de la serie de tiempo
 ```{r}
 library(raster)
 
@@ -105,7 +105,7 @@ pltEVIanom <- levelplot(anomEVI[[10]], margin=F, par.settings=HumCol,main=titu)
 pltEVIanom
 ```
 
-#Probando algo de mineroia de datos y machine learning
+# Probando algo de mineroia de datos y machine learning
 
 Para aprovechar la mayoria de los algoritmos disponibles es necesario converstir el stack a una matriz, dataframe, tiblle o data.table segun el paquete que vayamos a usar. En los ejemplos siguientes, es necesario tener los datos como matriz y tambien asegurar que no haya datos vacios o NAs
 
@@ -117,7 +117,7 @@ dim(EVI.mat)
 ```
 
 
-##clasificar con Kmeans mediante el paquete cluster
+## clasificar con Kmeans mediante el paquete cluster
 
 ```{r}
 library(cluster)
